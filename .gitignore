@@ -44,6 +44,7 @@ yarn-error.log*
 /dist/
 /dist-tencent/
 /dist-speedidc/
+/dist-pages/
 /build/
 /.wrangler/
 /outputs/

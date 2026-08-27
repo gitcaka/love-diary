@@ -182,7 +182,8 @@ export default function LoveDiaryApp() {
       window.location.reload();
     };
     navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
-    void navigator.serviceWorker.register("/sw.js").then((registration) => {
+    const serviceWorkerUrl = new URL("sw.js", document.baseURI).toString();
+    void navigator.serviceWorker.register(serviceWorkerUrl).then((registration) => {
       if (registration.waiting && navigator.serviceWorker.controller) setUpdateWorker(registration.waiting);
       registration.addEventListener("updatefound", () => {
         const worker = registration.installing;
@@ -377,7 +378,7 @@ function BackgroundMusic({ visible }: { visible: boolean }) {
 
   const ensureAudio = useCallback(() => {
     if (audioRef.current) return audioRef.current;
-    const audio = new Audio("/bg.wav");
+    const audio = new Audio(new URL("bg.wav", document.baseURI).toString());
     audio.loop = true;
     audio.preload = "none";
     audio.addEventListener("play", () => setIsPlaying(true));

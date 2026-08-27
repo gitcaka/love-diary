@@ -3,19 +3,19 @@
   "short_name": "恋爱日记",
   "description": "两个人一起记录、收藏和重温恋爱里的每一天。",
   "lang": "zh-CN",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#f8eef2",
   "theme_color": "#b9758e",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "shortcuts": [
-    { "name": "写日记", "short_name": "写日记", "url": "/?view=editor" },
-    { "name": "回忆回顾", "short_name": "回忆", "url": "/?view=review" },
-    { "name": "日历", "short_name": "日历", "url": "/?view=calendar" }
+    { "name": "写日记", "short_name": "写日记", "url": "./?view=editor" },
+    { "name": "回忆回顾", "short_name": "回忆", "url": "./?view=review" },
+    { "name": "日历", "short_name": "日历", "url": "./?view=calendar" }
   ]
 }

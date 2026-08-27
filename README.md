@@ -65,6 +65,16 @@ npx wrangler d1 migrations apply love-diary --remote --config dist/server/wrangl
 npx wrangler deploy --config dist/server/wrangler.json
 ```
 
+## GitHub Pages 预览
+
+推送到 `main` 分支后，`.github/workflows/pages.yml` 会自动构建并发布脱敏示例页面：
+
+```text
+https://<你的 GitHub 用户名>.github.io/love-diary/
+```
+
+Pages 版本用于查看界面和示例数据，不连接私人数据库，也不提供真实身份登录与写入能力。
+
 ## 私人媒体
 
 `public/bg.wav` 和 `public/og.png` 被有意排除在公开仓库之外。若需要背景音乐，请放入自己拥有版权或已获授权的音频文件；若需要社交分享图，可自行添加不含私人信息的图片并更新页面元数据。

@@ -2,7 +2,9 @@ const CACHE_VERSION = "love-diary-v1";
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const MEDIA_CACHE = "love-diary-media-v1";
 const AUDIO_CACHE = "love-diary-audio-v1";
-const SHELL_FILES = ["/", "/manifest.webmanifest", "/favicon.svg", "/icon-192.png", "/icon-512.png"];
+const APP_SCOPE = self.registration.scope;
+const scopedPath = (path = "") => new URL(path, APP_SCOPE).pathname;
+const SHELL_FILES = [scopedPath(), scopedPath("manifest.webmanifest"), scopedPath("favicon.svg"), scopedPath("icon-192.png"), scopedPath("icon-512.png")];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(SHELL_CACHE).then((cache) => Promise.allSettled(SHELL_FILES.map((file) => cache.add(file)))));
@@ -45,7 +47,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   // State requests stay network-authoritative; the app already falls back to its local IndexedDB copy.
-  if (url.pathname.startsWith("/api/")) return;
+  if (url.pathname.startsWith(scopedPath("api/")) || url.pathname.startsWith("/api/")) return;
 
   // Let cross-origin media use the browser's HTTP cache instead of storing opaque responses.
   if (url.origin !== self.location.origin) return;
@@ -55,16 +57,16 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (request.destination === "audio" || url.pathname === "/bg.wav") {
+  if (request.destination === "audio" || url.pathname === scopedPath("bg.wav")) {
     event.respondWith(cacheFirst(request, AUDIO_CACHE, 2));
     return;
   }
 
   if (request.mode === "navigate") {
     event.respondWith(fetch(request).then(async (response) => {
-      if (response.ok) await (await caches.open(SHELL_CACHE)).put("/", response.clone()).catch(() => undefined);
+      if (response.ok) await (await caches.open(SHELL_CACHE)).put(scopedPath(), response.clone()).catch(() => undefined);
       return response;
-    }).catch(() => caches.match("/")));
+    }).catch(() => caches.match(scopedPath())));
     return;
   }
 
