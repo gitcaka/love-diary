@@ -831,6 +831,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .identity-login-cancel { color: #96717f; background: #f1e4e8; }
 .identity-login-form > small { color: #a58d96; text-align: center; font-size: 9px; line-height: 1.5; }
 .identity-login-error { margin: -2px 0 0; color: #b04f6c; font-size: 10px; line-height: 1.5; }
+.identity-login-form > .demo-login-presets { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.demo-login-presets button { min-width: 0; min-height: 40px; padding: 7px 8px; border: 1px dashed rgba(167, 109, 132, .28); border-radius: 12px; color: #9a5e76; background: #fff9fb; font-size: 9px; font-weight: 700; }
+.demo-reset-card { background: linear-gradient(145deg, #fff9f7, #f6edf4); }
+.demo-reset-card h2 { margin-bottom: 8px; }
+.demo-reset-card p { color: var(--muted); font-size: 10px; line-height: 1.7; }
+.demo-reset-card button { width: 100%; min-height: 44px; margin-top: 10px; border-radius: 13px; color: #9a6377; background: #f0e1e7; font-size: 10px; font-weight: 700; }
 
 .writer-session-card { background: linear-gradient(145deg, #fffaf7, #f6edf3); }
 .writer-session-profile { display: flex; align-items: center; gap: 12px; }

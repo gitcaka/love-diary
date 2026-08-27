@@ -1,4 +1,4 @@
-const CACHE_VERSION = "love-diary-v1";
+const CACHE_VERSION = "love-diary-v2";
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const MEDIA_CACHE = "love-diary-media-v1";
 const AUDIO_CACHE = "love-diary-audio-v1";

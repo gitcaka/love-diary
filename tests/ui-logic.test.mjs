@@ -3,6 +3,7 @@ import test from "node:test";
 import { bookPageTarget, sortBookDiaries } from "../lib/book.ts";
 import { createSeedData, normalizeBackup } from "../lib/data.ts";
 import { appendDiaryHistory, filterDiaries } from "../lib/diary-memory.ts";
+import { DEMO_PASSWORDS, demoIdentityForPassword, demoIdentityFromSession, demoSessionToken } from "../lib/demo.ts";
 import { DEFAULT_WRITER_APPEARANCE, diaryAppearance, normalizeAccent, normalizeMarker } from "../lib/diary-style.ts";
 import { createDraftSnapshot, diaryDraftKey, restoreDiaryDraft } from "../lib/draft.ts";
 import { createCompleteBackup, readCompleteBackup } from "../lib/full-backup.ts";
@@ -12,6 +13,15 @@ import { availableReportMonths, buildMonthlyReport, reportMonthLabel } from "../
 import { applyTextColor, remapTextMarks, textSegments, trimTextAndMarks } from "../lib/rich-text.ts";
 
 const noFilters = { query: "", author: "all", month: "all", tag: "all", hasPhotos: false, favoritesOnly: false };
+
+test("public demo credentials map to isolated local identities", () => {
+  assert.equal(demoIdentityForPassword(DEMO_PASSWORDS.person1), "person1");
+  assert.equal(demoIdentityForPassword(DEMO_PASSWORDS.person2), "person2");
+  assert.equal(demoIdentityForPassword("wrong-demo-password"), null);
+  assert.equal(demoIdentityFromSession(demoSessionToken("person1")), "person1");
+  assert.equal(demoIdentityFromSession(demoSessionToken("person2")), "person2");
+  assert.equal(demoIdentityFromSession("cloud-token"), null);
+});
 
 test("mobile uploads keep proportions and use a compact image filename", () => {
   assert.deepEqual(fitImageInside(4032, 3024), { width: 1920, height: 1440 });

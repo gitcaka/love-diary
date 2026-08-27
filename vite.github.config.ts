@@ -6,7 +6,18 @@ export default defineConfig({
   root: path.resolve(__dirname, "tencent-web"),
   publicDir: path.resolve(__dirname, "public"),
   base: "/love-diary/",
-  plugins: [react()],
+  plugins: [
+    {
+      name: "love-diary-demo-mode",
+      transformIndexHtml(html) {
+        return html.replace(
+          '<meta name="love-diary-api-base" content="" />',
+          '<meta name="love-diary-api-base" content="" />\n    <meta name="love-diary-demo-mode" content="true" />',
+        );
+      },
+    },
+    react(),
+  ],
   resolve: {
     alias: { "@": path.resolve(__dirname) },
   },

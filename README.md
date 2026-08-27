@@ -73,7 +73,14 @@ npx wrangler deploy --config dist/server/wrangler.json
 https://<你的 GitHub 用户名>.github.io/love-diary/
 ```
 
-Pages 版本用于查看界面和示例数据，不连接私人数据库，也不提供真实身份登录与写入能力。
+Pages 版本不连接私人数据库。访客可以使用公开演示密码体验发布、编辑、删除日记和上传图片，数据只保存在访客自己的浏览器中：
+
+```text
+恋人A：demo-a
+恋人B：demo-b
+```
+
+设置页提供“恢复示例数据”，不同访客之间不会共享或互相覆盖体验内容。
 
 ## 私人媒体
 
