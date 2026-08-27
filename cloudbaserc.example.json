@@ -1,0 +1,15 @@
+{
+  "envId": "your-cloudbase-environment-id",
+  "functionRoot": "./tencent/functions",
+  "functions": [
+    {
+      "name": "love-diary-api",
+      "dir": "./tencent/functions/love-diary-api",
+      "type": "HTTP",
+      "runtime": "Nodejs20.19",
+      "timeout": 60,
+      "memorySize": 256,
+      "installDependency": true
+    }
+  ]
+}
