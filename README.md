@@ -2,6 +2,8 @@
 
 一个手机端优先的双人恋爱日记 Web App。两位记录者可以使用各自的身份密码写日记，访客可以只读浏览公开内容。
 
+[♡ 在线体验 GitHub Pages](https://gitcaka.github.io/love-diary/)
+
 本仓库是经过脱敏的通用版本，不包含真实昵称、纪念日、生日、登录密码、云环境 ID、线上数据库内容、私人照片或商业音乐文件。
 
 ## 功能
@@ -69,9 +71,7 @@ npx wrangler deploy --config dist/server/wrangler.json
 
 推送到 `main` 分支后，`.github/workflows/pages.yml` 会自动构建并发布脱敏示例页面：
 
-```text
-https://<你的 GitHub 用户名>.github.io/love-diary/
-```
+在线预览：[https://gitcaka.github.io/love-diary/](https://gitcaka.github.io/love-diary/)
 
 Pages 版本不连接私人数据库。访客可以使用公开演示密码体验发布、编辑、删除日记和上传图片，数据只保存在访客自己的浏览器中：
 
