@@ -34,7 +34,7 @@ export function availableReportMonths(diaries: Diary[]): string[] {
   return Array.from(new Set(diaries.map((diary) => diary.date.slice(0, 7)))).sort().reverse();
 }
 
-export function buildMonthlyReport(diaries: Diary[], month: string): MonthlyReport {
+export function buildMonthlyReport(diaries: Diary[], month: string, options: { prioritizeFavorites?: boolean } = {}): MonthlyReport {
   const monthly = diaries
     .filter((diary) => diary.date.startsWith(month))
     .sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt);
@@ -48,7 +48,7 @@ export function buildMonthlyReport(diaries: Diary[], month: string): MonthlyRepo
   const tagCounts = new Map<string, number>();
   monthly.forEach((diary) => (diary.tags ?? []).forEach((tag) => tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)));
   const highlight = [...monthly].sort((a, b) => {
-    const score = (diary: Diary) => Number(isDiaryFavorite(diary)) * 100 + diary.images.length * 10 + diary.content.length / 100;
+    const score = (diary: Diary) => (options.prioritizeFavorites !== false ? Number(isDiaryFavorite(diary)) * 100 : 0) + diary.images.length * 10 + diary.content.length / 100;
     return score(b) - score(a) || b.date.localeCompare(a.date) || b.updatedAt - a.updatedAt;
   })[0];
 

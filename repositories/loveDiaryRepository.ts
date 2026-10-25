@@ -1,6 +1,8 @@
 import { createSeedData, normalizeBackup } from "@/lib/data";
 import { demoIdentityForPassword, demoIdentityFromSession, demoSessionToken } from "@/lib/demo";
 import { compressImageForUpload } from "@/lib/image-compression";
+import { createId } from "@/lib/id";
+import { privateMediaState } from "@/lib/private-media";
 import type { AppData, DiaryAuthor, DiaryImage } from "@/lib/types";
 
 const DB_NAME = "love-diary";
@@ -12,10 +14,16 @@ const LEGACY_WRITER_KEY = "love-diary-writer-key";
 const IDENTITY_KEY = "love-diary-current-user";
 let cloudRevision: number | null = null;
 let writerAuthorized = false;
+let authEpoch = 0;
 
 function isDemoMode(): boolean {
   if (typeof document === "undefined") return false;
   return document.querySelector<HTMLMetaElement>('meta[name="love-diary-demo-mode"]')?.content === "true";
+}
+
+function isLocalPreview(): boolean {
+  return typeof document !== "undefined" && ["127.0.0.1", "localhost"].includes(location.hostname)
+    && document.querySelector<HTMLMetaElement>('meta[name="love-diary-local-preview"]')?.content === "true";
 }
 
 export interface CloudSnapshotSummary {
@@ -32,7 +40,7 @@ async function cloudFetch(path: string, init: RequestInit = {}, timeout = 15_000
   const controller = new AbortController();
   const timer = globalThis.setTimeout(() => controller.abort(), timeout);
   try {
-    return await fetch(apiUrl(path), { ...init, signal: controller.signal });
+    return await fetch(apiUrl(path), { credentials: "same-origin", ...init, signal: controller.signal });
   } finally {
     globalThis.clearTimeout(timer);
   }
@@ -41,6 +49,11 @@ async function cloudFetch(path: string, init: RequestInit = {}, timeout = 15_000
 function apiUrl(path: string): string {
   if (typeof document === "undefined") return path;
   const base = document.querySelector<HTMLMetaElement>('meta[name="love-diary-api-base"]')?.content.trim();
+  const mode = document.querySelector<HTMLMetaElement>('meta[name="love-diary-api-mode"]')?.content.trim();
+  if (mode === "php") {
+    const route = path.replace(/^\/api\//, "").replaceAll("/", "-");
+    return new URL(`/api.php?route=${encodeURIComponent(route)}`, base || document.baseURI).toString();
+  }
   return base ? new URL(path, `${base.replace(/\/$/, "")}/`).toString() : path;
 }
 
@@ -105,6 +118,8 @@ function clearWriterAuthorization(resetIdentity = true): void {
     if (resetIdentity) localStorage.setItem(IDENTITY_KEY, "person2");
   }
   writerAuthorized = false;
+  authEpoch += 1;
+  if (typeof window !== "undefined" && !isDemoMode()) window.dispatchEvent(new Event("love-diary:locked"));
 }
 
 function authHeaders(json = false): HeadersInit {
@@ -116,6 +131,9 @@ function authHeaders(json = false): HeadersInit {
 }
 
 function withDeviceSettings(cloud: AppData, local: AppData | null): AppData {
+  if (!isDemoMode() && typeof document !== "undefined" && document.querySelector<HTMLMetaElement>('meta[name="love-diary-api-mode"]')?.content === "php") {
+    cloud = privateMediaState(cloud, document.baseURI);
+  }
   return {
     ...cloud,
     profile: {
@@ -209,7 +227,7 @@ async function uploadEmbeddedAssets(data: AppData): Promise<AppData> {
   for (const key of ["avatar1", "avatar2", "coverImage"] as const) {
     const value = next.profile[key];
     if (value?.startsWith("data:")) {
-      next.profile[key] = (await loveDiaryRepository.uploadImage(dataUrlToFile(value, `${key}.jpg`), `${key}-${crypto.randomUUID()}`)).url;
+      next.profile[key] = (await loveDiaryRepository.uploadImage(dataUrlToFile(value, `${key}.jpg`), `${key}-${createId()}`)).url;
     }
   }
   return next;
@@ -238,11 +256,16 @@ export const loveDiaryRepository = {
       else localStorage.setItem(IDENTITY_KEY, "person2");
       return writerAuthorized;
     }
-    if (!writerKey()) localStorage.setItem(IDENTITY_KEY, "person2");
-    return Boolean(writerKey());
+    // Legacy tokens do not grant private access. The server verifies its HttpOnly
+    // session cookie before any existing private cache can be rendered.
+    if (document.querySelector<HTMLMetaElement>('meta[name="love-diary-api-mode"]')?.content === "php") localStorage.removeItem(SESSION_KEY);
+    return false;
   },
 
   isDemoMode,
+  isLocalPreview,
+
+  lockDevice(): void { clearWriterAuthorization(); },
 
   hasWriterAccess(): boolean {
     return writerAuthorized;
@@ -253,11 +276,13 @@ export const loveDiaryRepository = {
   },
 
   async loadCached(): Promise<AppData | null> {
+    if (!isDemoMode()) return null;
     const local = await readLocal();
     return local ? withDeviceSettings(writerAuthorized ? local : publicLocalState(local), local) : null;
   },
 
   async load(): Promise<AppData> {
+    const epoch = authEpoch;
     const local = await readLocal();
     if (isDemoMode()) {
       const cached = local ?? createSeedData();
@@ -265,27 +290,23 @@ export const loveDiaryRepository = {
       cloudRevision = 0;
       return withDeviceSettings(writerAuthorized ? cached : publicLocalState(cached), local);
     }
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
-      const cached = local ?? createSeedData();
-      return withDeviceSettings(writerAuthorized ? cached : publicLocalState(cached), local);
-    }
-    try {
+    if (localStorage.getItem("love-diary:logged-out") === "1") throw new Error("AUTH_REQUIRED");
+    if (typeof navigator !== "undefined" && !navigator.onLine) throw new Error("OFFLINE");
       const response = await cloudFetch("/api/state", { cache: "no-store", headers: authHeaders() });
+      if (epoch !== authEpoch) throw new Error("AUTH_STALE");
+      if (response.status === 401) { clearWriterAuthorization(); throw new Error("AUTH_REQUIRED"); }
       if (!response.ok) throw new Error(`Cloud state returned ${response.status}`);
-      const payload = await response.json() as { data?: unknown; revision?: number; canWrite?: boolean; identity?: DiaryAuthor };
+      const payload = await response.json() as { data?: unknown; revision?: number; canWrite?: boolean; identity?: DiaryAuthor; localPreview?: boolean };
       const cloud = normalizeBackup(payload.data);
       if (!cloud) throw new Error("Cloud state is invalid");
+      if (epoch !== authEpoch) throw new Error("AUTH_STALE");
       cloudRevision = typeof payload.revision === "number" ? payload.revision : null;
       writerAuthorized = payload.canWrite === true && (payload.identity === "person1" || payload.identity === "person2");
-      if (writerAuthorized && payload.identity) localStorage.setItem(IDENTITY_KEY, payload.identity);
-      else if (writerKey()) clearWriterAuthorization();
+      if ((writerAuthorized || (isLocalPreview() && payload.localPreview === true)) && (payload.identity === "person1" || payload.identity === "person2")) localStorage.setItem(IDENTITY_KEY, payload.identity);
+      else { clearWriterAuthorization(); throw new Error("AUTH_REQUIRED"); }
       const merged = withDeviceSettings(cloud, local);
       await writeLocal(merged);
       return merged;
-    } catch {
-      const cached = local ?? createSeedData();
-      return withDeviceSettings(writerAuthorized ? cached : publicLocalState(cached), local);
-    }
   },
 
   async login(password: string): Promise<AppData> {
@@ -307,8 +328,11 @@ export const loveDiaryRepository = {
     if (response.status === 429) throw new Error("LOGIN_RATE_LIMIT");
     if (!response.ok) throw new Error("LOGIN_FAILED");
     const payload = await response.json() as { token?: unknown; identity?: unknown };
-    if (typeof payload.token !== "string" || (payload.identity !== "person1" && payload.identity !== "person2")) throw new Error("LOGIN_FAILED");
-    localStorage.setItem(SESSION_KEY, payload.token);
+    if (payload.identity !== "person1" && payload.identity !== "person2") throw new Error("LOGIN_FAILED");
+    if (typeof payload.token === "string") localStorage.setItem(SESSION_KEY, payload.token);
+    else localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem("love-diary:logged-out");
+    authEpoch += 1;
     localStorage.setItem(IDENTITY_KEY, payload.identity);
     writerAuthorized = true;
     const data = await loveDiaryRepository.load();
@@ -317,6 +341,28 @@ export const loveDiaryRepository = {
   },
 
   async logout(): Promise<AppData> {
+    if (!isDemoMode()) {
+      // Keep the UI locked even if a lost connection prevents server revocation.
+      localStorage.setItem("love-diary:logged-out", "1");
+      authEpoch += 1;
+      try {
+        const response = await cloudFetch("/api/auth/logout", { method: "POST", headers: authHeaders(true), body: "{}" });
+        if (!response.ok) throw new Error("LOGOUT_FAILED");
+      } finally {
+        clearWriterAuthorization();
+        const db = await openDatabase();
+        await new Promise<void>((resolve, reject) => {
+          const tx = db.transaction(STORE, "readwrite");
+          tx.objectStore(STORE).delete(KEY);
+          tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error);
+        });
+        db.close();
+        if (typeof caches !== "undefined") {
+          await Promise.all((await caches.keys()).filter((key) => key.startsWith("love-diary-")).map((key) => caches.delete(key)));
+        }
+      }
+      return createSeedData(); // Caller returns to the intro; never render this as real data.
+    }
     clearWriterAuthorization();
     const local = await readLocal();
     if (isDemoMode()) {
@@ -328,7 +374,7 @@ export const loveDiaryRepository = {
   },
 
   async save(data: AppData, expectedRevision = cloudRevision): Promise<AppData> {
-    if (!writerKey()) throw new Error("READ_ONLY");
+    if (!writerAuthorized) throw new Error("READ_ONLY");
     if (isDemoMode()) {
       if (!demoIdentityFromSession(writerKey())) throw new Error("READ_ONLY");
       const prepared = structuredClone(data);
@@ -360,9 +406,12 @@ export const loveDiaryRepository = {
     return merged;
   },
 
-  async uploadImage(file: File, id = crypto.randomUUID()): Promise<DiaryImage> {
-    if (!writerKey()) throw new Error("READ_ONLY");
-    const uploadFile = await compressImageForUpload(file);
+  async uploadImage(file: File, id = createId()): Promise<DiaryImage> {
+    if (!writerAuthorized) throw new Error("READ_ONLY");
+    // The PHP server owns the shared policy; retain the chosen original.
+    const serverCompression = !isDemoMode() && typeof document !== "undefined"
+      && document.querySelector<HTMLMetaElement>('meta[name="love-diary-api-mode"]')?.content.trim() === "php";
+    const uploadFile = serverCompression ? file : await compressImageForUpload(file);
     if (isDemoMode()) {
       if (!demoIdentityFromSession(writerKey())) throw new Error("READ_ONLY");
       return { id, name: uploadFile.name, url: await fileToDataUrl(uploadFile) };
@@ -371,7 +420,7 @@ export const loveDiaryRepository = {
     const form = new FormData();
     form.set("file", uploadFile, uploadFile.name);
     form.set("id", id);
-    const response = await cloudFetch("/api/media", { method: "POST", headers: authHeaders(), body: form }, 60_000);
+    const response = await cloudFetch("/api/media", { method: "POST", headers: authHeaders(), body: form }, 120_000);
     if (response.status === 401) {
       clearWriterAuthorization();
       throw new Error("WRITE_KEY_INVALID");
@@ -382,7 +431,7 @@ export const loveDiaryRepository = {
 
   async deleteUploadedImage(image: DiaryImage): Promise<void> {
     if (isDemoMode()) return;
-    if (!writerKey() || !image.url.includes("/media/")) return;
+    if (!writerAuthorized || (!image.url.includes("/media/") && !image.url.includes("route=media-file"))) return;
     const response = await cloudFetch("/api/media", {
       method: "DELETE",
       headers: authHeaders(true),
@@ -405,7 +454,7 @@ export const loveDiaryRepository = {
 
   async listSnapshots(): Promise<CloudSnapshotSummary[]> {
     if (isDemoMode()) return [];
-    if (!writerKey()) return [];
+    if (!writerAuthorized) return [];
     const response = await cloudFetch("/api/snapshots", { cache: "no-store", headers: authHeaders() });
     if (response.status === 401) {
       clearWriterAuthorization();
@@ -418,7 +467,7 @@ export const loveDiaryRepository = {
 
   async createSnapshot(): Promise<CloudSnapshotSummary> {
     if (isDemoMode()) throw new Error("DEMO_MODE");
-    if (!writerKey()) throw new Error("READ_ONLY");
+    if (!writerAuthorized) throw new Error("READ_ONLY");
     const response = await cloudFetch("/api/snapshots", { method: "POST", headers: authHeaders(true), body: "{}" });
     if (response.status === 401) {
       clearWriterAuthorization();
@@ -432,7 +481,7 @@ export const loveDiaryRepository = {
 
   async restoreSnapshot(id: string, expectedRevision = cloudRevision): Promise<AppData> {
     if (isDemoMode()) throw new Error("DEMO_MODE");
-    if (!writerKey()) throw new Error("READ_ONLY");
+    if (!writerAuthorized) throw new Error("READ_ONLY");
     const local = await readLocal();
     const response = await cloudFetch("/api/snapshots/restore", {
       method: "POST",

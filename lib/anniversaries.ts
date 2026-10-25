@@ -54,3 +54,10 @@ export function sortAnniversaries(items: Anniversary[], from = toDateInput()): A
 export function nextUpcomingAnniversary(items: Anniversary[], from = toDateInput()): Anniversary | undefined {
   return sortAnniversaries(items, from).find((item) => anniversaryDaysUntil(item, from) >= 0);
 }
+
+// Presentation only: keep stored dates, descriptions and automatic rules intact.
+export function anniversaryPresentation(items: Anniversary[], from = toDateInput()) {
+  const rows = sortAnniversaries(items, from).map((item) => ({ item, days: anniversaryDaysUntil(item, from) }));
+  const upcoming = rows.filter((row) => row.days >= 0);
+  return { featured: upcoming[0], remaining: upcoming.slice(1), past: rows.filter((row) => row.days < 0) };
+}

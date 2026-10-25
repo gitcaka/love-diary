@@ -1,0 +1,20 @@
+{
+  "source": "Current mobile web, app/globals.css; 2026-10-23",
+  "pageWidth": 480,
+  "gutter": 18,
+  "headingSize": 22,
+  "ink": "#51443e",
+  "paper": "#fffdf7",
+  "background": "#fbf6f0",
+  "rose": "#a76982",
+  "muted": "#78666b",
+  "headingFont": "\"Kaiti SC\",\"STKaiti\",\"KaiTi\",serif",
+  "bodyFont": "\"Songti SC\",\"STSong\",\"SimSun\",serif",
+  "uiFont": "\"PingFang SC\",\"Microsoft YaHei\",system-ui,-apple-system,sans-serif",
+  "bodySize": 17,
+  "editorLine": 40,
+  "detailLine": 36,
+  "bookSize": 15,
+  "bookLine": 30,
+  "bookSpacing": 0.525
+}

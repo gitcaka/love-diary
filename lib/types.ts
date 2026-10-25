@@ -127,6 +127,7 @@ export interface AppData {
   version: 6;
   diaries: Diary[];
   responses: DiaryResponse[];
+  /** Legacy archives retained for backup compatibility; the website no longer creates or exposes a recycle bin. */
   trash: DeletedDiary[];
   diaryHistory: DiaryHistoryEntry[];
   anniversaries: Anniversary[];
@@ -136,7 +137,7 @@ export interface AppData {
   seeded: boolean;
 }
 
-export type ViewName = "home" | "calendar" | "book" | "review" | "report" | "wishes" | "editor" | "gallery" | "us" | "detail";
+export type ViewName = "home" | "book" | "wishes" | "editor" | "gallery" | "us" | "detail";
 
 export interface AppRoute {
   view: ViewName;

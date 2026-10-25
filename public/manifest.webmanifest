@@ -15,7 +15,7 @@
   ],
   "shortcuts": [
     { "name": "写日记", "short_name": "写日记", "url": "./?view=editor" },
-    { "name": "回忆回顾", "short_name": "回忆", "url": "./?view=review" },
-    { "name": "日历", "short_name": "日历", "url": "./?view=calendar" }
+    { "name": "日记本", "short_name": "日记本", "url": "./?view=book" },
+    { "name": "相册", "short_name": "相册", "url": "./?view=gallery" }
   ]
 }

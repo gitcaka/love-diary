@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { bookPageTarget, sortBookDiaries } from "../lib/book.ts";
+import { bookPageTarget, bookSwipeDirection, sortBookDiaries } from "../lib/book.ts";
 import { createSeedData, normalizeBackup } from "../lib/data.ts";
 import { appendDiaryHistory, filterDiaries } from "../lib/diary-memory.ts";
 import { DEMO_PASSWORDS, demoIdentityForPassword, demoIdentityFromSession, demoSessionToken } from "../lib/demo.ts";
@@ -37,6 +37,15 @@ test("book pages stop at the first and last diary", () => {
   assert.equal(bookPageTarget(0, "next", 3), 1);
   assert.equal(bookPageTarget(1, "previous", 3), 0);
   assert.equal(bookPageTarget(2, "next", 3), null);
+});
+
+test("book swipes ignore reading scrolls, short gestures and diagonal drift", () => {
+  assert.equal(bookSwipeDirection(-90, 8), "next");
+  assert.equal(bookSwipeDirection(90, -12), "previous");
+  assert.equal(bookSwipeDirection(45, 0), null);
+  assert.equal(bookSwipeDirection(-60, 120), null);
+  assert.equal(bookSwipeDirection(60, 55), null);
+  assert.equal(bookSwipeDirection(0, 100), null);
 });
 
 test("book order can switch without changing diary records", () => {

@@ -49,12 +49,25 @@ yarn-error.log*
 /.wrangler/
 /outputs/
 /work/
+/.playwright-cli/
+/output/playwright/
+/output/miniprogram-ui/
+/output/mini-web-alignment-20261023/
+/output/mini-review-20261023/
+/output/mini-review-compact-20261023/
 
 # local build metadata and deploy packages
 *.tsbuildinfo
 /*-speedidc.zip
+/love-diary-speedidc-*.zip
+/love-diary-backend-speedidc.zip
+/love-diary-private-backup-*.zip
 /worker-configuration.d.ts
 
 # Personal media is intentionally not published. Add your own licensed files.
 /public/bg.wav
 /public/og.png
+
+# WeChat developer machine state; never commit private account configuration.
+/miniprogram/project.private.config.json
+**/wechat-config.php

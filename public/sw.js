@@ -1,22 +1,21 @@
-const CACHE_VERSION = "love-diary-v2";
+const CACHE_VERSION = "love-diary-private-v15-compact-clean";
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
-const MEDIA_CACHE = "love-diary-media-v1";
-const AUDIO_CACHE = "love-diary-audio-v1";
 const APP_SCOPE = self.registration.scope;
 const scopedPath = (path = "") => new URL(path, APP_SCOPE).pathname;
 const SHELL_FILES = [scopedPath(), scopedPath("manifest.webmanifest"), scopedPath("favicon.svg"), scopedPath("icon-192.png"), scopedPath("icon-512.png")];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(SHELL_CACHE).then((cache) => Promise.allSettled(SHELL_FILES.map((file) => cache.add(file)))));
+  self.skipWaiting();
 });
 
 self.addEventListener("message", (event) => {
   if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
-  if (event.data?.type === "CLEAR_MEDIA_CACHE") event.waitUntil(Promise.all([caches.delete(MEDIA_CACHE), caches.delete(AUDIO_CACHE)]));
+  if (event.data?.type === "CLEAR_MEDIA_CACHE") event.waitUntil(caches.delete("love-diary-media-v1"));
 });
 
 self.addEventListener("activate", (event) => {
-  const keep = new Set([SHELL_CACHE, MEDIA_CACHE, AUDIO_CACHE]);
+  const keep = new Set([SHELL_CACHE]);
   event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith("love-diary-") && !keep.has(key)).map((key) => caches.delete(key)))).then(() => self.clients.claim()));
 });
 
@@ -46,24 +45,15 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
 
-  // State requests stay network-authoritative; the app already falls back to its local IndexedDB copy.
+  // Authentication, state and private photos are always network-authoritative.
   if (url.pathname.startsWith(scopedPath("api/")) || url.pathname.startsWith("/api/")) return;
+  if (url.pathname === scopedPath("api.php") || url.pathname === "/api.php" || url.pathname.includes("/media/")) return;
 
   // Let cross-origin media use the browser's HTTP cache instead of storing opaque responses.
   if (url.origin !== self.location.origin) return;
 
-  if (url.pathname.includes("/media/")) {
-    event.respondWith(cacheFirst(request, MEDIA_CACHE, 50));
-    return;
-  }
-
-  if (request.destination === "audio" || url.pathname === scopedPath("bg.wav")) {
-    event.respondWith(cacheFirst(request, AUDIO_CACHE, 2));
-    return;
-  }
-
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).then(async (response) => {
+    event.respondWith(fetch(request, { cache: "no-cache" }).then(async (response) => {
       if (response.ok) await (await caches.open(SHELL_CACHE)).put(scopedPath(), response.clone()).catch(() => undefined);
       return response;
     }).catch(() => caches.match(scopedPath())));
