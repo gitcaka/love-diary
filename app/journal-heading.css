@@ -16,7 +16,7 @@
 .journal-heading .heading-action{display:flex;align-items:center;justify-content:center;min-height:40px;padding:0 12px;border:1px solid #e5cfd8;border-radius:10px;color:#914d68;background:#f3e4e9;font-size:13px;line-height:1.4}
 .heading-decoration{font:26px Georgia,serif;color:#b78b9b}
 .page-book .book-header.journal-heading{margin-bottom:12px;gap:0}.page-book .book-header.journal-heading>div{display:flex;gap:8px}
-.private-welcome>.journal-heading{max-width:480px;margin-inline:auto}.private-welcome:has(>.journal-heading){padding-top:env(safe-area-inset-top,0px)}
+.private-welcome>.journal-heading{grid-column:1/-1;width:100%;margin-inline:auto}.private-welcome:has(>.journal-heading){padding-top:env(safe-area-inset-top,0px)}
 .detail-page:has(>.journal-heading) .detail-date{margin-top:0}
 @media(max-width:350px){.journal-heading h1.heading-title{font-size:22px}.journal-heading.has-back h1.heading-title{font-size:19px}.journal-heading .heading-row{gap:7px}.journal-heading .heading-eyebrow{font-size:8px;letter-spacing:1px}}
 @media(min-width:800px){.journal-heading{padding-top:16px}}

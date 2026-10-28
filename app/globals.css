@@ -6,6 +6,8 @@
 :root { --ui-font: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif; }
 
 :root {
+  --app-width: 480px;
+  --page-gutter: 18px;
   --ink: #42323b;
   --muted: #8f7b84;
   --cream: #fffaf5;
@@ -30,8 +32,8 @@ button, label, [tabindex] { -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; border: 0; }
 img { display: block; max-width: 100%; }
 
-.app-shell { min-height: 100dvh; position: relative; padding: 0 max(0px, calc((100vw - 480px) / 2)); }
-.phone-frame { position: relative; z-index: 2; width: 100%; max-width: 480px; min-height: 100dvh; margin: auto; overflow: hidden; background: #fbf6f2; box-shadow: 0 0 80px rgba(76, 48, 61, .17); }
+.app-shell { min-height: 100dvh; position: relative; padding: 0; }
+.phone-frame { position: relative; z-index: 2; width: 100%; max-width: var(--app-width); min-height: 100dvh; margin: auto; overflow: hidden; background: #fbf6f2; box-shadow: 0 0 80px rgba(76, 48, 61, .17); }
 .page-content { min-height: 100dvh; padding: max(22px, env(safe-area-inset-top)) 20px calc(80px + var(--safe-bottom)); animation: pageIn .48s cubic-bezier(.2,.8,.2,1) both; }
 .page-detail .page-content, .page-editor .page-content { padding-bottom: calc(34px + var(--safe-bottom)); }
 .motion-off *, .motion-off *::before, .motion-off *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
@@ -387,8 +389,6 @@ button:disabled { cursor: wait; opacity: .58; }
   .page-book .book-controls button { min-height: 40px; }
 }
 @media (orientation: landscape) and (max-height: 500px) and (min-width: 600px) {
-  .app-shell:has(.page-book) { padding-inline: max(0px, calc((100vw - 900px) / 2)); }
-  .phone-frame.page-book { max-width: 900px; }
   .page-book .book-page-screen { grid-template-columns: minmax(0, 1fr) 190px; grid-template-rows: auto auto minmax(0, 1fr) 28px 40px; column-gap: 18px; }
   .page-book .book-cover-shell { grid-column: 1; grid-row: 1 / -1; }
   .page-book .book-header { grid-column: 2; grid-row: 1; }
@@ -992,7 +992,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   --journal-font: "Kaiti SC", "STKaiti", "KaiTi", serif;
   --journal-shadow: 0 7px 20px -10px rgba(108, 76, 65, .2);
 }
-.page-content:not(.home-page):not(.book-page-screen) { padding-top: max(20px, env(safe-area-inset-top)); padding-inline: 18px; color: var(--journal-ink); background: var(--journal-page-background, radial-gradient(ellipse at 95% 0, rgba(239,217,223,.45), transparent 32%), #fbf6f0); }
+.page-content:not(.home-page):not(.book-page-screen) { padding-top: max(20px, env(safe-area-inset-top)); padding-inline: var(--page-gutter); color: var(--journal-ink); background: var(--journal-page-background, radial-gradient(ellipse at 95% 0, rgba(239,217,223,.45), transparent 32%), #fbf6f0); }
 .page-content:not(.home-page):not(.book-page-screen) :is(h1, h2) { color: var(--journal-ink); font-family: var(--journal-font); font-weight: 500; }
 .page-content:not(.home-page):not(.book-page-screen) .eyebrow { color: #a17d86; font-size: 8px; letter-spacing: .17em; }
 .page-content:not(.home-page):not(.book-page-screen) .icon-button { flex: 0 0 44px; width: 44px; height: 44px; border: 1px solid var(--journal-line); border-radius: 14px; color: #9b7280; background: #fffaf3; box-shadow: none; }
@@ -1270,7 +1270,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .lock-card h1 { font-family: var(--journal-font); font-weight: 500; }
 
 @media (max-width: 350px) {
-  .page-content:not(.home-page):not(.book-page-screen) { padding-inline: 14px; }
+  .page-content:not(.home-page):not(.book-page-screen) { padding-inline: var(--page-gutter); }
   .journal-page-heading h1 { font-size: 25px; }
   .journal-page-heading > div > p:last-child { font-size: 10px; }
   .journal-decoration { flex-basis: 45px; width: 45px; }
@@ -1294,7 +1294,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .detail-page .detail-direction b { font-size: 12px; }
   .image-viewer .viewer-source-actions > button, .image-viewer .viewer-source-actions > a { font-size: 10px; }
 }
-.private-welcome { --private-ink: #503b40; --private-rose: #ab6578; min-height: 100svh; color: var(--private-ink); background: radial-gradient(ellipse at 80% 5%, #f2dce3 0, transparent 44%), #faf6f3; padding: max(26px, env(safe-area-inset-top)) 24px max(30px, env(safe-area-inset-bottom)); }
+.private-welcome { --private-ink: #503b40; --private-rose: #ab6578; width: 100%; max-width: var(--app-width); margin-inline: auto; min-height: 100svh; color: var(--private-ink); background: radial-gradient(ellipse at 80% 5%, #f2dce3 0, transparent 44%), #faf6f3; padding: max(26px, env(safe-area-inset-top)) var(--page-gutter) max(30px, env(safe-area-inset-bottom)); }
 .private-brand { display: flex; align-items: center; gap: 10px; max-width: 880px; margin: auto; font-size: 15px; letter-spacing: 2px; }
 .private-brand > span:first-child { font-size: 33px; color: var(--private-rose); }
 .private-brand small { display: block; margin-top: 3px; font-size: 8px; letter-spacing: 1.8px; color: #94797f; }
@@ -1333,7 +1333,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .icp-filing:hover { text-decoration: underline; }
 .icp-filing:focus-visible { outline: 2px solid #b66d86; outline-offset: 3px; border-radius: 4px; }
 @media (max-width: 759px) { .private-hero { margin-top: 24px; } .private-book { width: 144px; height: 166px; margin-bottom: 20px; } .private-book-page b { font-size: 17px; margin-top: 10px; } .private-book-page > span, .private-book-page small { font-size: 6px; } .private-login { padding: 20px; margin-top: 20px; } }
-@media (min-width: 760px) { .private-welcome { display: grid; grid-template-columns: 1fr 1fr; align-content: center; gap: 24px 56px; padding: 44px max(5vw, calc((100vw - 1000px) / 2)); } .private-brand { grid-column: 1 / -1; width: 100%; margin-bottom: 20px; max-width: none; } .private-hero { margin: 20px 0 0; } .private-login { align-self: center; width: 100%; padding: 34px; margin: 0; } .private-footer { grid-column: 1 / -1; margin: 0; } }
+@media (min-width: 800px) { .private-welcome { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-content: center; gap: 24px; padding-block: 32px; } .private-brand { grid-column: 1 / -1; width: 100%; margin-bottom: 20px; max-width: none; } .private-hero { margin: 20px 0 0; } .private-login { align-self: center; width: 100%; padding: 24px; margin: 0; } .private-footer { grid-column: 1 / -1; margin: 0; } }
 
 /* Quiet writing workspace: clear controls, warm paper and optional tools. */
 .app-shell :is(button, input, select) { font-family: var(--ui-font); }
@@ -1551,8 +1551,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .letter-color-dock button:disabled { opacity: .45; cursor: default; }
 .letter-color-dock button:focus-visible { outline: 2px solid #9c6078; outline-offset: 2px; }
 @media (min-width: 768px) {
-  .app-shell:has(.page-editor) { padding-inline: max(0px, calc((100vw - 720px) / 2)); }
-  .phone-frame.page-editor { max-width: 720px; }
   .editor-page .editor-paper { padding: 24px 30px; }
   .editor-page .titleless-paper .color-letter-surface .live-color-input { min-height: 360px; }
 }
@@ -1629,9 +1627,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .home-book-open { font-size: 11px; }
 }
 @media (min-width: 800px) {
-  .app-shell:has(.page-home) { padding-inline: max(0px, calc((100vw - 720px) / 2)); }
-  .phone-frame.page-home { max-width: 720px; }
-  .home-page.page-content { padding-inline: 32px; }
+  :root { --app-width: 720px; --page-gutter: 24px; }
   .home-letter-top { padding: 20px 28px; }
   .home-letter-copy h2 { column-gap: 12px; }
   .home-letter-copy h2 > span { flex-basis: auto; font-size: 14px; }
@@ -1640,4 +1636,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .home-next-date { padding: 14px 28px; }
   .home-book-ribbon { padding-inline: 20px; }
   .home-page .diary-card { padding: 20px 24px; }
+}
+@media (max-width: 350px) {
+  :root { --page-gutter: 14px; }
 }

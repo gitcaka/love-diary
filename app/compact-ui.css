@@ -1,6 +1,7 @@
 /* Compact presentation only: diary content, controls and data are unchanged. */
 .app-shell.compact-ui { --heading-size:22px; --journal-shadow:none; }
-.app-shell.compact-ui .page-content { padding-inline:18px; }
+.app-shell.compact-ui .page-content { padding-inline:var(--page-gutter); }
+.app-shell.compact-ui .bottom-nav { width:min(100%,var(--app-width)); }
 .app-shell.compact-ui .section-heading h2,
 .app-shell.compact-ui .anniversary-heading h2 { font-size:20px; }
 .app-shell.compact-ui .home-page .love-cover { min-height:0; padding:14px 16px 0; border-radius:16px; box-shadow:none; }
@@ -93,7 +94,6 @@
 .app-shell.compact-ui .gallery-photo:nth-child(3n+1) img { height:160px; }
 .app-shell.compact-ui .gallery-photo>span { position:static; min-height:44px; padding:6px 4px 3px; gap:3px; }
 @media(max-width:350px) {
-  .app-shell.compact-ui .page-content { padding-inline:14px; }
   .app-shell.compact-ui .home-cover-art { width:72px; }
   .app-shell.compact-ui .home-cover-copy { width:76%; }
   .app-shell.compact-ui .home-cover-copy h2 strong { font-size:36px; }
