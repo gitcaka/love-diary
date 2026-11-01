@@ -102,6 +102,29 @@
 .app-shell.compact-ui .gallery-photo img { display:block; height:178px; min-height:0; max-height:none; }
 .app-shell.compact-ui .gallery-photo:nth-child(3n+1) img { height:160px; }
 .app-shell.compact-ui .gallery-photo>span { position:static; min-height:44px; padding:6px 4px 3px; gap:3px; }
+/* Explicit control geometry: keep labels centered and trailing actions on the edge. */
+.app-shell.compact-ui .heading-action { flex:none; margin:0; white-space:nowrap; }
+.app-shell.compact-ui .book-order-controls button { display:flex; align-items:center; justify-content:center; min-width:0; margin:0; white-space:nowrap; }
+.app-shell.compact-ui .book-edit-current { display:flex; align-items:center; justify-content:center; flex:none; min-width:44px; margin:0 0 0 auto; padding-inline:5px; white-space:nowrap; }
+.app-shell.compact-ui .book-swipe-hint { min-width:0; line-height:1.6; letter-spacing:normal; }
+.app-shell.compact-ui .book-controls { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.app-shell.compact-ui .book-controls button { display:flex; align-items:center; justify-content:center; min-width:0; margin:0; gap:8px; white-space:nowrap; }
+.app-shell.compact-ui .book-ribbon { right:12px; width:16px; height:38px; }
+.app-shell.compact-ui .book-day-feeling { flex:none; padding-right:18px; white-space:nowrap; }
+.app-shell.compact-ui .detail-pagination { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.app-shell.compact-ui .detail-pagination button { min-width:0; margin:0; }
+.app-shell.compact-ui .gallery-page .filter-pills button { display:flex; align-items:center; justify-content:center; min-width:64px; min-height:44px; margin:0; padding:10px 14px; font-size:12px; line-height:1.5; }
+.app-shell.compact-ui .field-heading { align-items:center; gap:12px; }
+.app-shell.compact-ui .field-heading > div { flex:1; min-width:0; }
+.app-shell.compact-ui .field-heading > button { display:flex; align-items:center; justify-content:center; flex:none; margin:0 0 0 auto; white-space:nowrap; }
+/* Reserve the lower row for ordering; removal has its own 44px corner target. */
+.app-shell.compact-ui .photo-sort-list { padding:0; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.app-shell.compact-ui .sort-polaroid { position:relative; min-width:0; padding:5px; border:1px solid #e7dcd4; border-radius:8px; box-shadow:none; transform:none; }
+.app-shell.compact-ui .photo-preview { display:block; border-radius:4px; overflow:hidden; }
+.app-shell.compact-ui .photo-controls { display:grid; grid-template-columns:44px minmax(0,1fr) 44px; align-items:center; gap:0; padding-top:4px; }
+.app-shell.compact-ui .photo-controls button { display:flex; align-items:center; justify-content:center; width:44px; min-width:44px; height:44px; margin:0; padding:0; line-height:1; }
+.app-shell.compact-ui .photo-controls > span { width:auto; min-width:0; text-align:center; }
+.app-shell.compact-ui .photo-controls .delete-mini { position:absolute; top:6px; right:6px; margin:0; border:1px solid #eadbd3; background:#fffaf3ee; font-size:22px; }
 @media(max-width:350px) {
   .app-shell.compact-ui .home-cover-art { width:72px; }
   .app-shell.compact-ui .home-cover-copy { width:76%; }
