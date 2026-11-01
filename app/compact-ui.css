@@ -19,12 +19,21 @@
 .app-shell.compact-ui .cover-upcoming b { font-size:20px; }
 .app-shell.compact-ui .cover-date-count { min-width:58px; padding-left:12px; gap:3px; }
 .app-shell.compact-ui .cover-date-count strong { font-size:32px; }
-.app-shell.compact-ui .home-diary-heading { margin-bottom:10px; }
-.app-shell.compact-ui .home-diary-heading > button { font-size:12px; border-radius:10px; }
+.app-shell.compact-ui .home-diary-heading { width:100%; margin:0 0 10px; gap:12px; }
+.app-shell.compact-ui .home-diary-heading > div { min-width:0; }
+.app-shell.compact-ui .home-diary-heading > button { display:flex; align-items:center; justify-content:center; flex:0 0 auto; height:44px; margin:0 0 0 auto; padding:0 14px; gap:5px; border:1px solid #e6d4dc; border-radius:22px; color:#965b73; background:#f8edf1; font-size:13px; font-weight:500; line-height:1; white-space:nowrap; }
 .app-shell.compact-ui .memory-search-box { height:44px; min-height:44px; border-radius:10px; }
 .app-shell.compact-ui .memory-search-box input { font-size:14px; }
-.app-shell.compact-ui .filter-disclosure { display:flex; align-items:center; justify-content:center; flex:0 0 68px; height:44px; min-height:44px; gap:4px; padding:0; border-radius:10px; font-size:13px; line-height:1; }
-.app-shell.compact-ui .filter-disclosure i { margin:0; }
+.app-shell.compact-ui .filter-disclosure { --filter-surface:#fffaf7; position:relative; display:flex; align-items:center; justify-content:center; flex:0 0 44px; width:44px; min-width:44px; height:44px; min-height:44px; padding:0; margin:0; border:1px solid #e6d6d8; border-radius:12px; color:#866873; background:var(--filter-surface); line-height:1; overflow:visible; }
+.app-shell.compact-ui .filter-disclosure:is(.selected, [aria-expanded=true]) { --filter-surface:#f7e7ed; color:#965b73; border-color:#cda5b3; }
+.app-shell.compact-ui .filter-icon { position:relative; display:block; width:18px; height:18px; flex:none; }
+.app-shell.compact-ui .filter-stroke { position:absolute; left:0; width:18px; height:1.5px; background:currentColor; border-radius:2px; }
+.app-shell.compact-ui .filter-stroke.top { top:2px; }
+.app-shell.compact-ui .filter-stroke.middle { top:8px; }
+.app-shell.compact-ui .filter-stroke.bottom { top:14px; }
+.app-shell.compact-ui .filter-stroke::after { content:""; position:absolute; left:3px; top:-2.25px; width:6px; height:6px; box-sizing:border-box; border:1.5px solid currentColor; border-radius:50%; background:var(--filter-surface); }
+.app-shell.compact-ui .filter-stroke.middle::after { left:10px; }
+.app-shell.compact-ui .filter-count { position:absolute; top:-4px; right:-4px; display:flex; align-items:center; justify-content:center; width:17px; height:17px; border:2px solid #fbf6f0; border-radius:50%; background:#a46780; color:#fff; font:10px/1 var(--ui-font); }
 .app-shell.compact-ui .diary-card { padding:14px; margin-bottom:12px; border-radius:14px; box-shadow:none; }
 .app-shell.compact-ui .diary-card:nth-child(even) { border-radius:14px; }
 .app-shell.compact-ui .diary-card::before { display:none; }
