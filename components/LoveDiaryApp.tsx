@@ -4,6 +4,7 @@
 import { ChangeEvent, CSSProperties, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { anniversaryPresentation, displayAnniversaries, nextUpcomingAnniversary } from "@/lib/anniversaries";
 import { bookPageTarget, bookSwipeDirection, sortBookDiaries, paginateBookText, bookTextSlice, type BookTextPage, type BookDirection, type BookOrder } from "@/lib/book";
+import { bookPartForAnchor, bookAnchorForPart, bookReaderScope, readBookReading, writeBookReading, type BookAnchor, type BookReader } from "@/lib/book-reading";
 import { anniversaryDateLabel, anniversaryDaysUntil, diffDays, formatDate, formatShortDate, toDateInput } from "@/lib/date";
 import { filterDiaries, appendDiaryHistory, type DiaryFilters } from "@/lib/diary-memory";
 import { DEMO_PASSWORDS } from "@/lib/demo";
@@ -43,8 +44,6 @@ const weathers: Weather[] = [
 ];
 
 const APP_HISTORY_KEY = "love-diary:navigation";
-const BOOK_ORDER_KEY = "love-diary:book-order";
-const BOOK_PAGE_KEY = "love-diary:book-page";
 const HOME_FILTER_KEY = "love-diary:home-filters";
 const HOME_VISIBLE_KEY = "love-diary:home-visible";
 const HOME_SCROLL_KEY = "love-diary:home-scroll";
@@ -351,7 +350,10 @@ export default function LoveDiaryApp() {
         if (await commit(removePublishedDiary(data, diary.id), "这篇日记已删除")) navigate({ view: "home" }, true);
       }} onViewImages={(images, index) => setViewer({ images, index, title: formatDate(diary.date) })} /> : <EmptyPage onHome={() => navigate({ view: "home" }, true)} />;
     }
-    if (route.view === "book") return <DiaryBookPage data={data} canWrite={canWrite} onEdit={(id) => navigate({ view: "editor", id })} onViewImages={(images, index, title) => setViewer({ images, index, title })} />;
+    if (route.view === "book") {
+      const reader = bookReaderScope(data.profile.currentUser, loveDiaryRepository.isDemoMode(), loveDiaryRepository.hasWriterAccess());
+      return <DiaryBookPage key={reader} reader={reader} data={data} canWrite={canWrite} onEdit={(id) => navigate({ view: "editor", id })} onViewImages={(images, index, title) => setViewer({ images, index, title })} />;
+    }
     if (route.view === "gallery") return <GalleryPage data={data} onHome={() => navigate({ view: "home" })} onOpen={(images, index, title) => setViewer({ images, index, title })} />;
     if (route.view === "us") return <UsPage data={data} canWrite={canWrite} commit={commit} onLogin={loginIdentity} onLogout={logoutIdentity} lockNow={() => setUnlocked(false)} installPrompt={installPrompt} standalone={standalone} onInstall={installApp} />;
     return <HomePage data={data} canWrite={canWrite} onOpen={(id) => navigate({ view: "detail", id })} onCreate={() => navigate({ view: "editor" })} onUs={() => navigate({ view: "us" })} />;
@@ -716,31 +718,32 @@ function DiaryHistory({ history, profile, onRestore }: { history: DiaryHistoryEn
 
 
 
-function DiaryBookPage({ data, canWrite, onEdit, onViewImages }: { data: AppData; canWrite: boolean; onEdit: (id: string) => void; onViewImages: (images: DiaryImage[], index: number, title: string) => void }) {
-  const [order, setOrder] = useState<BookOrder>(() => {
-    if (typeof window === "undefined") return "newest";
-    try { return window.localStorage.getItem(BOOK_ORDER_KEY) === "oldest" ? "oldest" : "newest"; } catch { return "newest"; }
-  });
+function bookDeviceStorage() {
+  try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; }
+}
+const bookStart: BookAnchor = { kind: "photo", offset: 0 };
+function DiaryBookPage({ reader, data, canWrite, onEdit, onViewImages }: { reader: BookReader; data: AppData; canWrite: boolean; onEdit: (id: string) => void; onViewImages: (images: DiaryImage[], index: number, title: string) => void }) {
+  const [initial] = useState(() => readBookReading(bookDeviceStorage(), reader));
+  const legacy = useRef(initial.legacy);
+  const [order, setOrder] = useState<BookOrder>(initial.reading.order);
   const diaries = useMemo(() => sortBookDiaries(data.diaries, order), [data.diaries, order]);
-  const [pageIndex, setPageIndex] = useState(() => {
-    if (typeof window === "undefined") return 0;
-    try {
-      const savedId = window.localStorage.getItem(BOOK_PAGE_KEY);
-      const savedIndex = savedId ? diaries.findIndex((diary) => diary.id === savedId) : -1;
-      return savedIndex >= 0 ? savedIndex : 0;
-    } catch { return 0; }
-  });
-  const [partIndex, setPartIndex] = useState(0);
-  const [pagination, setPagination] = useState({ id: "", count: 1 });
-  const [flip, setFlip] = useState<{ direction: BookDirection; target: number; part: number } | null>(null);
+  const [position, setPosition] = useState<{diaryId: string; anchor: BookAnchor}>(() => ({
+    diaryId: initial.reading.diaryId || diaries[0]?.id || "", anchor: initial.reading
+  }));
+  const [pagination, setPagination] = useState<{id: string; pages: BookTextPage[]}>({ id: "", pages: [] });
+  const [flip, setFlip] = useState<{ direction: BookDirection; diaryId: string; anchor: BookAnchor } | null>(null);
   const screenRef = useRef<HTMLDivElement>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
-  const safeIndex = diaries.length ? Math.min(pageIndex, diaries.length - 1) : 0;
+  const safeIndex = Math.max(0, diaries.findIndex(diary => diary.id === position.diaryId));
   const current = diaries[safeIndex];
-  const partCount = pagination.id === current?.id ? pagination.count : 1;
-  const safePart = Math.min(partIndex, partCount - 1);
-  const reportPagination = useCallback((id: string, count: number) => {
-    setPagination((old) => old.id === id && old.count === count ? old : { id, count });
+  const anchor = current?.id === position.diaryId ? position.anchor : bookStart;
+  const measured = pagination.id === current?.id;
+  const pages = measured ? pagination.pages : [];
+  const hasPhoto = Boolean(current?.images.length);
+  const partCount = Math.max(1, Number(hasPhoto) + pages.length);
+  const safePart = bookPartForAnchor(anchor, pages, hasPhoto);
+  const reportPagination = useCallback((id: string, pages: BookTextPage[]) => {
+    setPagination((old) => old.id === id && old.pages.length === pages.length && old.pages.every((p,i) => p.start === pages[i].start && p.end === pages[i].end) ? old : { id, pages });
   }, []);
 
   useEffect(() => {
@@ -762,14 +765,20 @@ function DiaryBookPage({ data, canWrite, onEdit, onViewImages }: { data: AppData
 
   useEffect(() => {
     if (!current) return;
-    try { window.localStorage.setItem(BOOK_PAGE_KEY, current.id); } catch { /* Device preference is optional. */ }
-  }, [current]);
+    if (current.id !== position.diaryId) {
+      setPosition({ diaryId: current.id, anchor: bookStart });
+      return;
+    }
+    // Keep the requested text anchor across reflow; don't round it down at every resize.
+    const kind = anchor.kind === "photo" && hasPhoto || !current.content && hasPhoto ? "photo" : "text";
+    const offset = kind === "text" ? Math.min(anchor.offset, Math.max(0, current.content.length - 1)) : 0;
+    if (writeBookReading(bookDeviceStorage(), reader, { diaryId: current.id, kind, offset, order }, legacy.current)) legacy.current = false;
+  }, [current, position.diaryId, reader, order, anchor, hasPhoto]);
 
   useEffect(() => {
     if (!flip) return;
     const fallback = window.setTimeout(() => {
-      setPageIndex(flip.target);
-      setPartIndex(flip.part);
+      setPosition({ diaryId: flip.diaryId, anchor: flip.anchor });
       setFlip(null);
     }, 900);
     return () => window.clearTimeout(fallback);
@@ -778,28 +787,27 @@ function DiaryBookPage({ data, canWrite, onEdit, onViewImages }: { data: AppData
   if (!current) return <div ref={screenRef} className="book-page-screen page-content"><JournalHeader className="book-header" title="我们的日记本" eyebrow="THE STORY OF US" /><SoftEmpty icon="▤" title="日记本还是空白的" text="写下第一篇日记后，它就会出现在这里。" /></div>;
 
   const startFlip = (direction: BookDirection) => {
-    if (flip) return;
+    if (flip || !measured) return;
     const withinDiary = direction === "next" ? safePart < partCount - 1 : safePart > 0;
     const target = withinDiary ? safeIndex : bookPageTarget(safeIndex, direction, diaries.length);
     if (target === null) return;
-    const part = withinDiary ? safePart + (direction === "next" ? 1 : -1) : direction === "next" ? 0 : Number.MAX_SAFE_INTEGER;
-    if (!data.profile.animations || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setPageIndex(target); setPartIndex(part); }
-    else setFlip({ direction, target, part });
+    const nextDiary = diaries[target];
+    const nextAnchor: BookAnchor = withinDiary ? bookAnchorForPart(safePart + (direction === "next" ? 1 : -1), pages, hasPhoto)
+      : direction === "next" || !nextDiary.content ? bookStart : { kind: "text", offset: Math.max(0, nextDiary.content.length - 1) };
+    const next = { diaryId: nextDiary.id, anchor: nextAnchor };
+    if (!data.profile.animations || window.matchMedia("(prefers-reduced-motion: reduce)").matches) setPosition(next);
+    else setFlip({ direction, ...next });
   };
   const finishFlip = () => {
     if (!flip) return;
-    setPageIndex(flip.target);
-    setPartIndex(flip.part);
+    setPosition({ diaryId: flip.diaryId, anchor: flip.anchor });
     setFlip(null);
   };
-  const revealed = flip && diaries[flip.target] ? diaries[flip.target] : current;
+  const revealedIndex = flip ? diaries.findIndex(d => d.id === flip.diaryId) : -1;
+  const revealed = revealedIndex >= 0 ? diaries[revealedIndex] : current;
   const changeOrder = (nextOrder: BookOrder) => {
     if (nextOrder === order || flip) return;
-    const nextDiaries = sortBookDiaries(data.diaries, nextOrder);
-    const nextIndex = nextDiaries.findIndex((diary) => diary.id === current.id);
     setOrder(nextOrder);
-    setPageIndex(nextIndex >= 0 ? nextIndex : 0);
-    try { window.localStorage.setItem(BOOK_ORDER_KEY, nextOrder); } catch { /* Device preference is optional. */ }
   };
 
   return <div ref={screenRef} className="book-page-screen page-content">
@@ -809,14 +817,14 @@ function DiaryBookPage({ data, canWrite, onEdit, onViewImages }: { data: AppData
       <div className="book-spine" aria-hidden="true"><span>LOVE / NOTES</span></div>
       <div className="book-ribbon" aria-hidden="true">♡</div>
       <div className="book-stage" aria-label="日记书页，左右滑动翻页" onTouchStart={(event) => { if (event.touches.length !== 1) { touchStart.current = null; return; } const point = event.touches[0]; touchStart.current = { x: point.clientX, y: point.clientY }; }} onTouchCancel={() => { touchStart.current = null; }} onTouchEnd={(event) => { const start = touchStart.current; touchStart.current = null; if (!start) return; const point = event.changedTouches[0]; const direction = bookSwipeDirection(point.clientX - start.x, point.clientY - start.y); if (direction) startFlip(direction); }}>
-        <div className={`book-sheet book-sheet-under ${flip ? "is-revealed" : ""}`} aria-hidden="true" inert><BookPaper key={revealed.id} diary={revealed} profile={data.profile} partIndex={flip?.part ?? partIndex} pageNumber={flip?.target !== undefined ? flip.target + 1 : safeIndex + 1} interactive={false} onViewImages={onViewImages} /></div>
+        <div className={`book-sheet book-sheet-under ${flip ? "is-revealed" : ""}`} aria-hidden="true" inert><BookPaper key={revealed.id} diary={revealed} profile={data.profile} anchor={flip?.anchor ?? anchor} pageNumber={revealedIndex >= 0 ? revealedIndex + 1 : safeIndex + 1} interactive={false} onViewImages={onViewImages} /></div>
         <div className={`book-sheet book-sheet-top ${flip ? `is-flipping-${flip.direction}` : ""}`} onAnimationEnd={(event) => event.target === event.currentTarget && finishFlip()} inert={Boolean(flip)} aria-live="polite" aria-busy={Boolean(flip)}>
-          <BookPaper key={current.id} diary={current} profile={data.profile} partIndex={partIndex} onPagination={reportPagination} pageNumber={safeIndex + 1} interactive onViewImages={onViewImages} />
+          <BookPaper key={current.id} diary={current} profile={data.profile} anchor={anchor} onPagination={reportPagination} pageNumber={safeIndex + 1} interactive onViewImages={onViewImages} />
         </div>
       </div>
     </div>
     <div className="book-page-tools"><span className="book-swipe-hint">第 {safeIndex + 1} / {diaries.length} 篇 · {safePart + 1} / {partCount} 页</span>{canWrite && <button type="button" className="book-edit-current" disabled={Boolean(flip)} onClick={() => onEdit(current.id)}>✎ 编辑</button>}</div>
-    <div className="book-scrubber"><input type="range" min={0} max={Math.max(0, diaries.length - 1)} value={safeIndex} disabled={Boolean(flip)} style={{ "--book-progress": `${diaries.length > 1 ? safeIndex / (diaries.length - 1) * 100 : 0}%` } as CSSProperties} aria-label="快速选择日记页" aria-valuetext={`第 ${safeIndex + 1} 篇，共 ${diaries.length} 篇`} onChange={(event) => { setFlip(null); setPartIndex(0); setPageIndex(Number(event.target.value)); }} /></div>
+    <div className="book-scrubber"><input type="range" min={0} max={Math.max(0, diaries.length - 1)} value={safeIndex} disabled={Boolean(flip)} style={{ "--book-progress": `${diaries.length > 1 ? safeIndex / (diaries.length - 1) * 100 : 0}%` } as CSSProperties} aria-label="快速选择日记页" aria-valuetext={`第 ${safeIndex + 1} 篇，共 ${diaries.length} 篇`} onChange={(event) => { setFlip(null); setPosition({ diaryId: diaries[Number(event.target.value)].id, anchor: bookStart }); }} /></div>
     <div className="book-controls">
       <button type="button" disabled={(safeIndex === 0 && safePart === 0) || Boolean(flip)} onClick={() => startFlip("previous")}><span>‹</span><b>上一页</b></button>
       <button type="button" disabled={(safeIndex === diaries.length - 1 && safePart === partCount - 1) || Boolean(flip)} onClick={() => startFlip("next")}><b>下一页</b><span>›</span></button>
@@ -824,7 +832,7 @@ function DiaryBookPage({ data, canWrite, onEdit, onViewImages }: { data: AppData
   </div>;
 }
 
-function BookPaper({ diary, profile, pageNumber, partIndex, onPagination, interactive, onViewImages }: { diary: Diary; profile: CoupleProfile; pageNumber: number; partIndex: number; onPagination?: (id: string, count: number) => void; interactive: boolean; onViewImages: (images: DiaryImage[], index: number, title: string) => void }) {
+function BookPaper({ diary, profile, pageNumber, anchor, onPagination, interactive, onViewImages }: { diary: Diary; profile: CoupleProfile; pageNumber: number; anchor: BookAnchor; onPagination?: (id: string, pages: BookTextPage[]) => void; interactive: boolean; onViewImages: (images: DiaryImage[], index: number, title: string) => void }) {
   const direction = diaryDirection(diary, profile);
   const appearance = diaryAppearance(diary.author, profile);
   const [year, month, day] = diary.date.split("-");
@@ -833,7 +841,7 @@ function BookPaper({ diary, profile, pageNumber, partIndex, onPagination, intera
   const [pages, setPages] = useState<BookTextPage[]>([]);
   const photoPages = diary.images.length ? 1 : 0;
   const total = Math.max(1, pages.length + photoPages);
-  const part = Math.min(partIndex, total - 1);
+  const part = bookPartForAnchor(anchor, pages, Boolean(photoPages));
   const photoPage = photoPages > 0 && part === 0;
   useEffect(() => {
     const body = bodyRef.current;
@@ -847,7 +855,7 @@ function BookPaper({ diary, profile, pageNumber, partIndex, onPagination, intera
         return probe.getBoundingClientRect().height <= body.clientHeight - 2;
       });
       setPages((old) => JSON.stringify(old) === JSON.stringify(measured) ? old : measured);
-      if (interactive) onPagination?.(diary.id, Math.max(1, measured.length + photoPages));
+      if (interactive) onPagination?.(diary.id, measured);
     };
     const observer = new ResizeObserver(update);
     observer.observe(body);

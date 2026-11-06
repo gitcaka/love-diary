@@ -1,4 +1,4 @@
-const CACHE_VERSION = "love-diary-private-v18-control-layout";
+const CACHE_VERSION = "love-diary-demo-v19-reader-resume";
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const APP_SCOPE = self.registration.scope;
 const scopedPath = (path = "") => new URL(path, APP_SCOPE).pathname;
